@@ -55,6 +55,13 @@ public class AvlTree<Value extends Indexable> {
         }
     }
 
+    public boolean isBalanced() {
+        if(root == null) {
+            return true;
+        }
+        return Math.abs(root.getBalanceFactor())  <= 1;
+    }
+
 
     private Node<Value> rotateRight(Node<Value> node) {
         Node<Value> newRoot = node.getLeft();

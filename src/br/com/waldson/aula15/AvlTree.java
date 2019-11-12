@@ -1,87 +1,160 @@
-package br.com.waldson.aula15;
+package br.com.waldson.arvores.avl;
 
-public class AvlTree<Value extends Indexable> {
-    private Node<Value> root;
+import br.com.waldson.arvores.misc.Indexable;
 
-    public void insert(Value value) {
-        root = insert(new Node<Value>(value),root);
+public class AVLTree<ValueType extends Indexable> {
+
+    private AVLNode<ValueType> root;
+
+    public void insert(ValueType value) {
+        root = insert(new AVLNode<ValueType>(value), root);
     }
 
-    private Node<Value> insert(Node<Value> node, Node<Value> parent) {
-        if(parent == null) {
+    public void remove(ValueType value) {
+        root = remove(value.getKey(), root);
+    }
+
+    public void remove(int key) {
+        root = remove(key, root);
+    }
+
+    public boolean isBalanced() {
+        if (root == null) {
+            return true;
+        }
+
+        return Math.abs(root.getBalanceFactor()) <= 1;
+    }
+
+    public ValueType search(int key) {
+        return search(key, root);
+    }
+
+    private ValueType search(int key, AVLNode<ValueType> node) {
+        if (node == null) {
+            return null;
+        }
+        if (key < node.getValue().getKey()) {
+            return search(key, node.getLeft());
+        } else if (key > node.getValue().getKey()) {
+            return search(key, node.getRight());
+        }
+
+        return node.getValue();
+    }
+
+    private AVLNode<ValueType> remove(int key, AVLNode<ValueType> node) {
+        if (node == null) {
+            return null;
+        }
+
+        if (key < node.getValue().getKey()) {
+            node.setLeft(remove(key, node.getLeft()));
+        } else if (key > node.getValue().getKey()) {
+            node.setRight(remove(key, node.getRight()));
+        } else {
+            if (node.getLeft() == null) {
+                return balance(node.getRight());
+            } else if (node.getRight() == null){
+                return balance(node.getLeft());
+            }
+            int balanceFactor = node.getBalanceFactor();
+            if (balanceFactor < 0) {
+                AVLNode<ValueType> sucessor = getMax(node.getLeft());
+                node.setValue(sucessor.getValue());
+                node.setLeft(remove(sucessor.getValue().getKey(), node.getLeft()));
+            } else {
+                AVLNode<ValueType> sucessor = getMin(node.getRight());
+                node.setValue(sucessor.getValue());
+                node.setRight(remove(sucessor.getValue().getKey(), node.getRight()));
+            }
+        }
+
+        return balance(node);
+    }
+
+    private AVLNode<ValueType> getMin(AVLNode<ValueType> root) {
+        AVLNode<ValueType> min = root;
+        while (min.getLeft() != null) {
+            min = min.getLeft();
+        }
+
+        return min;
+    }
+
+    private AVLNode<ValueType> getMax(AVLNode<ValueType> root) {
+        AVLNode<ValueType> max = root;
+        while (max.getRight() != null) {
+            max = max.getRight();
+        }
+
+        return max;
+    }
+
+    private AVLNode<ValueType> insert(AVLNode<ValueType> node, AVLNode<ValueType> parent) {
+        if (parent == null) {
             return node;
         }
 
-        if(node.getValue().getKey() == parent.getValue().getKey()) {
+        if (node.getValue().getKey() == parent.getValue().getKey()) {
             parent.setValue(node.getValue());
             return parent;
         }
 
-        if(node.getValue().getKey() < parent.getValue().getKey()) {
-            parent.setLeft(insert(node,parent.getLeft()));
+        if (node.getValue().getKey() < parent.getValue().getKey()) {
+            parent.setLeft(insert(node, parent.getLeft()));
         } else {
-            parent.setRight(insert(node,parent.getRight()));
+            parent.setRight(insert(node, parent.getRight()));
         }
 
         return balance(parent);
     }
 
-    private Node<Value> balance(Node<Value> node) {
-        int balanceFactor = node.getBalanceFactor();
-        if(balanceFactor >= -1 && balanceFactor <= 1) {
-            return node;
+    private AVLNode<ValueType> balance(AVLNode<ValueType> parent) {
+        if (parent == null) {
+            return null;
         }
 
-        if(balanceFactor > 1) {
+        if (parent.getBalanceFactor() >= -1 && parent.getBalanceFactor() <= 1) {
+            return parent;
+        }
+
+        if (parent.getBalanceFactor() > 1) {
             //L
-            if (node.getLeft().getBalanceFactor() > 0) {
+            if (parent.getLeft().getBalanceFactor() > 0) {
                 //LL
-                return rotateRight(node);
+                return rotateRight(parent);
             } else {
                 //LR
-                node.setLeft(rotateLeft(node.getLeft()));
-                return rotateRight(node);
+                parent.setLeft(rotateLeft(parent.getLeft()));
+                return rotateRight(parent);
             }
         } else {
             //R
-            if (node.getRight().getBalanceFactor() > 0) {
-                //RL
-                node.setRight(rotateRight(node.getRight()));
-                return rotateLeft(node);
-            } else {
+            if (parent.getRight().getBalanceFactor() < 0) {
                 //RR
-                return rotateLeft(node);
+                return rotateLeft(parent);
+            } else {
+                //RL
+                parent.setRight(rotateRight(parent.getRight()));
+                return rotateLeft(parent);
             }
         }
     }
 
-    public boolean isBalanced() {
-        if(root == null) {
-            return true;
-        }
-        return Math.abs(root.getBalanceFactor())  <= 1;
-    }
+    private AVLNode<ValueType> rotateRight(AVLNode<ValueType> parent) {
+        AVLNode<ValueType> newRoot = parent.getLeft();
+        parent.setLeft(newRoot.getRight());
+        newRoot.setRight(parent);
 
-
-    private Node<Value> rotateRight(Node<Value> node) {
-        Node<Value> newRoot = node.getLeft();
-        node.setLeft(newRoot.getRight());
-        newRoot.setRight(node);
         return newRoot;
     }
 
-    private Node<Value> rotateLeft(Node<Value> node) {
-        Node<Value> newRoot = node.getRight();
-        node.setRight(newRoot.getLeft());
-        newRoot.setLeft(node);
+    private AVLNode<ValueType> rotateLeft(AVLNode<ValueType> parent) {
+        AVLNode<ValueType> newRoot = parent.getRight();
+        parent.setRight(newRoot.getLeft());
+        newRoot.setLeft(parent);
+
         return newRoot;
-    }
-
-    public void remove() {
-
-    }
-
-    public Value search(int key) {
-        return null;
     }
 }
